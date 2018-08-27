@@ -1,8 +1,8 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import HelloWorld from '@/components/HelloWorld'
+import Calculator from '@/components/Calculator'
 import Duty from '@/components/Duty'
-import Month from '@/components/Month'
 
 Vue.use(Router)
 
@@ -14,14 +14,14 @@ export default new Router({
       component: HelloWorld
     },
     {
+      path: '/calculator',
+      name: 'calculator',
+      component: Calculator
+    },
+    {
       path: '/duty',
       name: 'duty',
       component: Duty
-    },
-    {
-      path: '/month',
-      name: 'month',
-      component: Month
     }
   ]
 })

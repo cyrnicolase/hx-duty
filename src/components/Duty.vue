@@ -1,35 +1,43 @@
 <template>
     <div>
-        <h1 class="title">{{year}}</h1>
-        <div class="body">
-            <div class="year" v-for="i in 12">
-                <div class="month">
-                    <h2>{{i}}月</h2>
-                </div>
-                <ul class="weekdays">
-                    <li>日</li>
-                    <li>一</li>
-                    <li>二</li>
-                    <li>三</li>
-                    <li>四</li>
-                    <li>五</li>
-                    <li>六</li>
-                </ul>
-                <ul class="days">
-                    <li v-for="day in months[i - 1]">{{day}}</li>
-                </ul>
-            </div>
+        <h1>轮班表</h1>
+        <div class="month">
+            <ul>
+                <li class='prev' @click="btnPrev()"><</li>
+                <li class='next' @click="btnNext()">></li>
+                <li class='title'>{{month + 1}}月<br/>{{year}}</li>
+            </ul>
         </div>
+
+        <ul class="weekdays">
+            <li>日</li>
+            <li>一</li>
+            <li>二</li>
+            <li>三</li>
+            <li>四</li>
+            <li>五</li>
+            <li>六</li>
+        </ul>
+        <ul class="days">
+            <li v-for="day in monthDays">
+                <span :class="curDate == day ? 'active' : 'color: '">{{day}}</span><br>
+                <span class="foot_sign">{{monthDuty[day - 1]}}</span>
+            </li>
+        </ul>
     </div>
 </template>
 
 <script>
 export default {
     data() {
-        let d = new Date()
+        let activeDate = new Date();
         return {
-            year: d.getFullYear(),
-            months: [],
+            curDate: activeDate.getDate(),
+            year: activeDate.getFullYear(),
+            month: activeDate.getMonth(),
+            monthDays: [],
+            activeDate: activeDate,
+            monthDuty: [],
         }
     },
     created: function() {
@@ -37,69 +45,122 @@ export default {
     },
     methods: {
         init() {
-            let year = (new Date()).getFullYear();
-            for (let i = 0; i < 12; ++i) {
-                let d = new Date(year, i, 1);
-                let t = new Date(year, i, 0);
-                t = t.getDate();
+            let i = this.month;
+            let monthBegin = (new Date(this.year, i, 1)).getDay();
+            let monthEnd = (new Date(this.year, i + 1, 0)).getDate();
 
-                let begin_week = d.getDay();
-                this.months[i] = [];
-                for (let j = 0; j < begin_week; j++) {
-                    this.months[i].push('');
-                }
-
-                for (let j = 1; j <= t; j++) {
-                    this.months[i].push(j);
-                }
+            this.monthDays = [];
+            for (let j = 0; j < monthBegin; ++j) {
+                this.monthDays.push('');
             }
 
-            console.log(this.months);
-        }
+            for (let j = 1; j <= monthEnd; ++j) {
+                this.monthDays.push(j);
+            }
+
+            this.calc();
+        },
+        calc() {
+            // 序列: 白班, 值班, 下夜班, 正修
+            // 2018-08-26 白班
+            this.monthDuty = [];
+            let map = ['白班', '值班', '下夜班', '正修']; 
+            let refDate = new Date(2018, 7, 26);
+            let monthBegin = new Date(this.year, this.month, 1);
+            let diff = (refDate.getTime() - monthBegin.getTime()) / 86400000;
+            let t = new Date(this.year, this.month + 1, 0).getDate();
+            if (diff > 0) {
+                let offset = (4 - diff % 4) % 4;
+                for (let i = 0; i < t; ++i) {
+                    this.monthDuty.push(map[(offset + i) % 4]);
+                }
+            }  else {
+                diff = Math.abs(diff);
+                let offset = diff % 4;
+                for (let i = 0; i < t; ++i) {
+                    this.monthDuty.push(map[(offset + i) % 4]); 
+                }
+            }
+        },
+        btnPrev() {
+            this.month -= 1;
+            this.curDate = null;
+            if (this.month < 0) {
+                this.month = 11;
+                this.year -= 1;
+            }
+
+            if (this.month == this.activeDate.getMonth() 
+                && this.year == this.activeDate.getFullYear()) {
+                this.curDate = this.activeDate.getDate();
+            }
+
+            this.init();
+        },
+        btnNext() {
+            this.month += 1;
+            this.curDate = null;
+            if (this.month > 11) {
+                this.month = 0;
+                this.year += 1;
+            }
+
+            if (this.month == this.activeDate.getMonth() 
+                && this.year == this.activeDate.getFullYear()) {
+                this.curDate = this.activeDate.getDate();
+            }
+
+            this.init();
+        },
     }
 }
 </script>
 
 <style lang="stylus" scoped>
-* {box-sizing:border-box;}
+* {box-sizing: border-box;}
 ul {list-style-type: none;}
-body {font-family: Verdana,sans-serif;}
-
-.title {
-    text-align: center;
-    font-size: 46px;
-    margin: 0;
-}
-
-.body {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
-}
-
-.year {
-    width: 20%;
-    margin: 10px;
-    padding: 10px 0;
-}
 
 .month {
-    text-align: center;
-    padding: 5px 15px;
+    padding: 70px 25px;
     width: 100%;
     background: #1abc9c;
+}
+.month ul {
+    margin: 0;
+    padding: 0;
+}
+
+.month ul li {
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    font-size: 20px;
+}
+.month .prev {
+    float: left;
+    padding-top: 10px;
+}
+
+.month .title {
+    text-align: center;
+}
+
+.month .next {
+    float: right;
+    padding-top: 10px;
 }
 
 .weekdays {
     margin: 0;
     padding: 10px 0;
     background-color: #ddd;
+    font-size: 0;
 }
 
 .weekdays li {
     display: inline-block;
-    width: 13%;
+    font-size: 18px;
+    width: 13.6%;
     color: #666;
     text-align: center;
 }
@@ -107,30 +168,40 @@ body {font-family: Verdana,sans-serif;}
 .days {
     margin: 0;
     padding: 10px 0;
-    background: #eee;
+    background-color: #eee;
 }
 
 .days li {
     list-style-type: none;
     display: inline-block;
-    width: 13%;
+    width: 13.6%;
     text-align: center;
-    margin-bottom: 5px;
+    padding-bottom: 5px;
     font-size: 16px;
     color: #777;
 }
 
+.days li .active {
+    padding: 5px;
+    background: #1abc9c;
+    color: white !important;
+}
+
+.days li .foot_sign {
+    font-size: 10px;
+}
+
 /* 添加不同尺寸屏幕的样式 */
 @media screen and (max-width:720px) {
-    .weekdays li, .days li {width: 13.1%;}
+    .weekdays li, .days li {width: calc(100% / 7);}
 }
  
 @media screen and (max-width: 420px) {
-    .weekdays li, .days li {width: 12.5%;}
+    .weekdays li, .days li {width: calc(100% / 7);}
     .days li .active {padding: 2px;}
 }
  
 @media screen and (max-width: 290px) {
-    .weekdays li, .days li {width: 12.2%;}
+    .weekdays li, .days li {width: calc(100% / 7);}
 }
 </style>
