@@ -20,7 +20,7 @@
         </ul>
         <ul class="days">
             <li v-for="day in monthDays">
-                <span :class="curDate == day ? 'active' : 'color: '">{{day}}</span><br>
+                <span :class=getDayClass(day)>{{day}}</span><br>
                 <span class="foot_sign">{{monthDuty[day - 1]}}</span>
             </li>
         </ul>
@@ -38,6 +38,8 @@ export default {
             monthDays: [],
             activeDate: activeDate,
             monthDuty: [],
+            weekends: [],
+            holidays: {},
         }
     },
     created: function() {
@@ -49,16 +51,51 @@ export default {
             let monthBegin = (new Date(this.year, i, 1)).getDay();
             let monthEnd = (new Date(this.year, i + 1, 0)).getDate();
 
+            this.weekends = [];
             this.monthDays = [];
             for (let j = 0; j < monthBegin; ++j) {
                 this.monthDays.push('');
             }
 
+            let is_weekend = false;
             for (let j = 1; j <= monthEnd; ++j) {
                 this.monthDays.push(j);
-            }
+                let d = new Date(this.year, i, j);
 
+                if (!is_weekend) {
+                    let weekday = (new Date(this.year, i, j)).getDay();
+                    if (0 == weekday) {
+                        is_weekend = true;
+                        this.weekends.push(j - 1); 
+                        this.weekends.push(j); 
+                        this.weekends.push(j + 6); 
+                        this.weekends.push(j + 7); 
+                        this.weekends.push(j + 13); 
+                        this.weekends.push(j + 14); 
+                        this.weekends.push(j + 20); 
+                        this.weekends.push(j + 21); 
+                        this.weekends.push(j + 27); 
+                        this.weekends.push(j + 28); 
+                        continue;
+                    }
+
+                    if (6 == weekday) {
+                        is_weekend = true;
+                        this.weekends.push(j);
+                        this.weekends.push(j + 1);
+                        this.weekends.push(j + 7);
+                        this.weekends.push(j + 8);
+                        this.weekends.push(j + 14);
+                        this.weekends.push(j + 15);
+                        this.weekends.push(j + 21);
+                        this.weekends.push(j + 22);
+                        this.weekends.push(j + 28);
+                        this.weekends.push(j + 29);
+                    }
+                }
+            }
             this.calc();
+            // this.getHolidays();
         },
         calc() {
             // 序列: 白班, 值班, 下夜班, 正修
@@ -74,13 +111,39 @@ export default {
                 for (let i = 0; i < t; ++i) {
                     this.monthDuty.push(map[(offset + i) % 4]);
                 }
-            }  else {
+            } else {
                 diff = Math.abs(diff);
                 let offset = diff % 4;
                 for (let i = 0; i < t; ++i) {
                     this.monthDuty.push(map[(offset + i) % 4]); 
                 }
             }
+        },
+        getHolidays() {
+            let month = parseInt(this.month) + 1;
+            if (month < 10) {
+                month = this.year + '0' + month; 
+            }
+
+            this.holidays = [];
+            this.$http.get('http://www.easybots.cn/api/holiday.php?m=' + month).then(res => {
+                this.holidays = res.body[month];
+            });
+        },
+        getDayClass(day) {
+            if (this.curDate == day) {
+                return 'active';
+            }
+
+            if (this.weekends.indexOf(day) > -1) {
+                return 'holiday';
+            }
+
+            if (this.holidays[day] !== undefined) {
+                return 'holiday';
+            }
+
+            return '';
         },
         btnPrev() {
             this.month -= 1;
@@ -182,6 +245,8 @@ ul {list-style-type: none;}
 }
 
 .days li .active {
+    width: 20px;
+    display: inline-block;
     padding: 5px;
     background: #1abc9c;
     color: white !important;
@@ -189,6 +254,15 @@ ul {list-style-type: none;}
 
 .days li .foot_sign {
     font-size: 10px;
+}
+
+.days li .holiday {
+    width: 20px;
+    display: inline-block;
+    padding: 5px;
+    padding: 5px;
+    background:#63B8FF;
+    color: white !important;
 }
 
 /* 添加不同尺寸屏幕的样式 */
@@ -199,6 +273,7 @@ ul {list-style-type: none;}
 @media screen and (max-width: 420px) {
     .weekdays li, .days li {width: calc(100% / 7);}
     .days li .active {padding: 2px;}
+    .days li .holiday {padding: 2px;}
 }
  
 @media screen and (max-width: 290px) {
