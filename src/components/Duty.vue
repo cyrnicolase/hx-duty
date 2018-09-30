@@ -20,14 +20,17 @@
         </ul>
         <ul class="days">
             <li v-for="day in monthDays">
+                <span class="header_sign">{{monthDuty[day - 1]}}</span><br>
                 <span :class=getDayClass(day)>{{day}}</span><br>
-                <span class="foot_sign">{{monthDuty[day - 1]}}</span>
+                <span class="foot_sign">{{lunars[day - 1]}}</span>
             </li>
         </ul>
     </div>
 </template>
 
 <script>
+import solarLunar from 'solarlunar';
+
 export default {
     data() {
         let activeDate = new Date();
@@ -40,6 +43,7 @@ export default {
             monthDuty: [],
             weekends: [],
             holidays: {},
+            lunars: [],
         }
     },
     created: function() {
@@ -106,16 +110,23 @@ export default {
             let monthBegin = new Date(this.year, this.month, 1);
             let diff = (refDate.getTime() - monthBegin.getTime()) / 86400000;
             let t = new Date(this.year, this.month + 1, 0).getDate();
+
             if (diff > 0) {
                 let offset = (4 - diff % 4) % 4;
                 for (let i = 0; i < t; ++i) {
                     this.monthDuty.push(map[(offset + i) % 4]);
+
+                    let lunar = solarLunar.solar2lunar(this.year, this.month + 1, i + 1);
+                    this.lunars.push(lunar.dayCn == '初一' ? lunar.monthCn : lunar.dayCn);
                 }
             } else {
                 diff = Math.abs(diff);
                 let offset = diff % 4;
                 for (let i = 0; i < t; ++i) {
                     this.monthDuty.push(map[(offset + i) % 4]); 
+
+                    let lunar = solarLunar.solar2lunar(this.year, this.month + 1, i + 1);
+                    this.lunars.push(lunar.dayCn == '初一' ? lunar.monthCn : lunar.dayCn);
                 }
             }
         },
@@ -253,6 +264,10 @@ ul {list-style-type: none;}
 }
 
 .days li .foot_sign {
+    font-size: 10px;
+}
+
+.days li .header_sign {
     font-size: 10px;
 }
 
