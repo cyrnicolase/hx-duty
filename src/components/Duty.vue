@@ -57,6 +57,7 @@ export default {
 
             this.weekends = [];
             this.monthDays = [];
+            this.lunars = [];
             for (let j = 0; j < monthBegin; ++j) {
                 this.monthDays.push('');
             }
