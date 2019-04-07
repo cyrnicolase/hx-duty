@@ -104,10 +104,10 @@ export default {
         },
         calc() {
             // 序列: 白班, 值班, 下夜班, 正修
-            // 2018-08-26 白班
+            // 2019-04-05 白班
             this.monthDuty = [];
             let map = ['白班', '值班', '下夜班', '正修']; 
-            let refDate = new Date(2018, 7, 26);
+            let refDate = new Date(2019, 3, 5);
             let monthBegin = new Date(this.year, this.month, 1);
             let diff = (refDate.getTime() - monthBegin.getTime()) / 86400000;
             let t = new Date(this.year, this.month + 1, 0).getDate();
